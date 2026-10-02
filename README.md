@@ -37,4 +37,8 @@ zero accounts, zero tracking, zero cost.
 
 - New repo, built Oct 2–5 2026 during the challenge window.
 - Prize lanes entered: Best Use of Gemma.
-- Handover: installed on my friend's laptop on Oct __ — quote: "___".
+- Handover: gave it to my roommate on Oct 2. His words:
+  "Khá hữu ích, bình thường tao toàn phải tự nghĩ đau cả đầu."
+  ("Pretty useful — normally I have to come up with meals myself, headache.")
+  His ask: richer menus for different people with balanced nutrition → v2
+  audience selector (student / gym / senior) + per-day nutrition note.

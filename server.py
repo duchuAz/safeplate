@@ -23,8 +23,16 @@ def llm():
     raise RuntimeError("unused: inference goes through llama-server")
 
 
-def make_prompt(allergies, servings, note, days=7):
+AUDIENCES = {
+    "sinh vien": "cheap market ingredients, cook in under 30 minutes",
+    "gym": "high protein (thit, trung, ca, dau phu), note protein per day",
+    "nguoi lon tuoi": "soft easy-to-chew foods, low salt and low sugar",
+}
+
+
+def make_prompt(allergies, servings, note, days=7, audience="sinh vien"):
     aller = ", ".join(allergies) if allergies else "nothing in particular"
+    aud = AUDIENCES.get(audience, AUDIENCES["sinh vien"])
     return (
         "You are SafePlate, a Vietnamese meal-planning assistant. "
         "Write EVERYTHING in Vietnamese. "
@@ -36,11 +44,14 @@ def make_prompt(allergies, servings, note, days=7):
         "RULE 3: ingredients must be real foods from a market "
         "(never generic words like chat beo, gia vi chung chung). "
         "RULE 4: list each day number from 1 to %d exactly once, no repeats. "
+        "Audience: %s (%s). Add one short 'nutrition' note per day "
+        "(e.g. protein source, balance). "
         "Servings per meal: %s. Note: %s. "
         "Reply with valid JSON ONLY "
         "(no markdown, no extra text) like: "
         '{"days": [{"day": 1, "dish": "...", "ingredients": ["..."], '
-        '"steps": ["..."]}], "shopping_list": ["..."]}' % (days, servings, note)
+        '"steps": ["..."], "nutrition": "..."}], "shopping_list": ["..."]}' % (
+            days, audience, aud, servings, note)
     )
 
 
@@ -67,6 +78,7 @@ SCHEMA = {
                     "dish": {"type": "string"},
                     "ingredients": {"type": "array", "items": {"type": "string"}, "maxItems": 9},
                     "steps": {"type": "array", "items": {"type": "string"}, "maxItems": 4},
+                    "nutrition": {"type": "string"},
                 },
                 "required": ["day", "dish", "ingredients", "steps"],
             },
@@ -127,9 +139,9 @@ def _post(plan, allergies, days):
     return plan
 
 
-def generate(allergies, servings, note, days=7):
+def generate(allergies, servings, note, days=7, audience="sinh vien"):
     import urllib.request
-    prompt = make_prompt(allergies, servings, note, days)
+    prompt = make_prompt(allergies, servings, note, days, audience)
     last = ""
     for _ in range(3):
         body = json.dumps({
@@ -189,7 +201,8 @@ class H(BaseHTTPRequestHandler):
         try:
             plan = generate(req.get("allergies", []),
                             req.get("servings", 2),
-                            req.get("note", ""), int(req.get("days", 7)))
+                            req.get("note", ""), int(req.get("days", 7)),
+                            req.get("audience", "sinh vien"))
             self._send(200, json.dumps(plan, ensure_ascii=False))
         except Exception as ex:
             self._send(500, json.dumps({"error": str(ex)[:500]}))
