@@ -11,57 +11,87 @@ label{display:block;margin:.4rem 0}.chk{display:inline-block;margin:.2rem .6rem 
 button{background:#4ade80;border:0;border-radius:8px;padding:.6rem 1.2rem;font-weight:700;cursor:pointer}
 button:disabled{opacity:.5}pre{white-space:pre-wrap;background:#020617;padding:1rem;border-radius:8px}
 .badge{font-size:.8rem;color:#94a3b8}
+.lang{float:right;background:#1e293b;color:#e2e8f0;border:1px solid #4ade80}
+.lang.on{background:#4ade80;color:#0f172a}
 </style>
 </head>
 <body>
-<h1>SafePlate</h1>
-<p class="badge">100% offline — Gemma runs on this laptop via llama.cpp. No data leaves your machine.</p>
-<div class="card">
-<h3>1. Di ung cua ban</h3>
-<label class="chk"><input type="checkbox" class="al" value="dau phong"> dau phong</label>
-<label class="chk"><input type="checkbox" class="al" value="tom"> tom</label>
-<label class="chk"><input type="checkbox" class="al" value="cua ghe"> cua / ghe</label>
-<label class="chk"><input type="checkbox" class="al" value="trung"> trung</label>
-<label class="chk"><input type="checkbox" class="al" value="sua"> sua</label>
-<label class="chk"><input type="checkbox" class="al" value="dau nanh"> dau nanh</label>
-<label class="chk"><input type="checkbox" class="al" value="bot mi"> bot mi / gluten</label>
-<h3>2. Khau phan</h3>
-<label>So nguoi an: <input id="serv" type="number" value="2" min="1" max="8"></label>
-<label>Doi tuong: <select id="aud">
-<option value="sinh vien">Sinh vien (re, nhanh)</option>
-<option value="gym">Tap gym (nhieu dam)</option>
-<option value="nguoi lon tuoi">Nguoi lon tuoi (mem, nhat)</option>
-</select></label>
-<label>Ghi chu: <input id="bud" type="text" value="sinh vien, cho dau moi" style="width:100%"></label>
-<br><button id="go">Len thuc don 7 ngay</button>
+<div>
+<button class="lang on" id="lvi">Tiếng Việt</button>
+<button class="lang" id="len">English</button>
 </div>
-<div class="card"><h3>Thuc don</h3><pre id="out">Chua co — bam nut tren.</pre></div>
+<h1>SafePlate</h1>
+<p class="badge" data-vi="100% ngoại tuyến — Gemma chạy trên chính laptop này. Không dữ liệu nào rời khỏi máy."
+   data-en="100% offline — Gemma runs on this laptop. No data leaves your machine."></p>
+<div class="card">
+<h3 data-vi="1. Dị ứng của bạn" data-en="1. Your allergies"></h3>
+<label class="chk"><input type="checkbox" class="al" value="dau phong"> <span data-vi="đậu phộng" data-en="peanuts"></span></label>
+<label class="chk"><input type="checkbox" class="al" value="tom"> <span data-vi="tôm" data-en="shrimp"></span></label>
+<label class="chk"><input type="checkbox" class="al" value="cua ghe"> <span data-vi="cua / ghẹ" data-en="crab"></span></label>
+<label class="chk"><input type="checkbox" class="al" value="trung"> <span data-vi="trứng" data-en="eggs"></span></label>
+<label class="chk"><input type="checkbox" class="al" value="sua"> <span data-vi="sữa" data-en="milk"></span></label>
+<label class="chk"><input type="checkbox" class="al" value="dau nanh"> <span data-vi="đậu nành" data-en="soy"></span></label>
+<label class="chk"><input type="checkbox" class="al" value="bot mi"> <span data-vi="bột mì / gluten" data-en="wheat / gluten"></span></label>
+<h3 data-vi="2. Khẩu phần" data-en="2. Servings"></h3>
+<label><span data-vi="Số người ăn: " data-en="People: "></span><input id="serv" type="number" value="2" min="1" max="8"></label>
+<label><span data-vi="Đối tượng: " data-en="Eating as: "></span><select id="aud">
+<option value="sinh vien" data-vi="Sinh viên (rẻ, nhanh)" data-en="Student (cheap, fast)">Sinh viên (rẻ, nhanh)</option>
+<option value="gym" data-vi="Tập gym (nhiều đạm)" data-en="Gym-goer (high protein)">Tập gym (nhiều đạm)</option>
+<option value="nguoi lon tuoi" data-vi="Người lớn tuổi (mềm, nhạt)" data-en="Senior (soft, light)">Người lớn tuổi (mềm, nhạt)</option>
+</select></label>
+<label><span data-vi="Ghi chú: " data-en="Note: "></span><input id="bud" type="text" value="sinh viên, chợ đầu mối" style="width:100%"></label>
+<br><button id="go" data-vi="Lên thực đơn 7 ngày" data-en="Plan 7 days"></button>
+</div>
+<div class="card"><h3 data-vi="Thực đơn" data-en="Meal plan"></h3><pre id="out">...</pre></div>
 <script>
-const OLLAMA = "http://localhost:11434/api/generate";
+let LANG = "vi";
+const T = {
+  vi: {thinking: "Gemma đang nghĩ... (chạy ngoại tuyến trên máy này)",
+       err: "Lỗi: ", needServer: "(chưa chạy python server.py?)",
+       day: "Ngày ", ing: "\n  NL: ", steps: "\n  Làm: ", nutri: "\n  DD: ",
+       shop: "=== ĐI CHỢ ===\n", empty: "Chưa có — bấm nút trên."},
+  en: {thinking: "Gemma is thinking... (running offline on this machine)",
+       err: "Error: ", needServer: "(is python server.py running?)",
+       day: "Day ", ing: "\n  Ingredients: ", steps: "\n  Steps: ",
+       nutri: "\n  Nutrition: ", shop: "=== SHOPPING LIST ===\n",
+       empty: "Nothing yet — hit the button above."}
+};
+function applyLang(l) {
+  LANG = l;
+  document.getElementById("lvi").classList.toggle("on", l === "vi");
+  document.getElementById("len").classList.toggle("on", l === "en");
+  document.querySelectorAll("[data-vi]").forEach(e => {
+    e.textContent = (l === "vi") ? e.getAttribute("data-vi") : e.getAttribute("data-en");
+  });
+  document.getElementById("bud").value = (l === "vi") ? "sinh viên, chợ đầu mối" : "student budget, wet market";
+  document.getElementById("out").textContent = T[l].empty;
+}
+document.getElementById("lvi").onclick = () => applyLang("vi");
+document.getElementById("len").onclick = () => applyLang("en");
 document.getElementById("go").onclick = async () => {
-  const btn = document.getElementById("go"), out = document.getElementById("out");
+  const t = T[LANG], btn = document.getElementById("go"), out = document.getElementById("out");
   const al = [...document.querySelectorAll(".al:checked")].map(e => e.value);
   const serv = document.getElementById("serv").value, bud = document.getElementById("bud").value;
   const aud = document.getElementById("aud").value;
-  btn.disabled = true; out.textContent = "Gemma dang nghi... (chay offline tren may nay)";
+  btn.disabled = true; out.textContent = t.thinking;
   try {
     const r = await fetch("/plan", {method:"POST",
       headers:{"Content-Type":"application/json"},
       body: JSON.stringify({allergies: al, servings: Number(serv),
-        note: bud, days: 7, audience: aud})});
+        note: bud, days: 7, audience: aud, lang: LANG})});
     const plan = await r.json();
     if (plan.error) throw plan.error;
     let html = "";
-    for (const d of plan.days) html += "Ngay " + d.day + ": " + d.dish
-      + "\n  NL: " + (d.ingredients||[]).join(", ")
-      + "\n  Lam: " + (d.steps||[]).join(" | ")
-      + (d.nutrition ? "\n  DD: " + d.nutrition : "") + "\n\n";
-    html += "=== DI CHO ===\n" + (plan.shopping_list||[]).join(", ");
+    for (const d of plan.days) html += t.day + d.day + ": " + d.dish
+      + t.ing + (d.ingredients||[]).join(", ")
+      + t.steps + (d.steps||[]).join(" | ")
+      + (d.nutrition ? t.nutri + d.nutrition : "") + "\n\n";
+    html += t.shop + (plan.shopping_list||[]).join(", ");
     out.textContent = html;
-  } catch(e) { out.textContent = "Loi: " + e + "\n(python server.py co chay khong?)";
-  }
+  } catch(e) { out.textContent = t.err + e + "\n" + t.needServer; }
   btn.disabled = false;
 };
+applyLang("vi");
 </script>
 </body>
 </html>

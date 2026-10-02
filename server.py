@@ -30,12 +30,36 @@ AUDIENCES = {
 }
 
 
-def make_prompt(allergies, servings, note, days=7, audience="sinh vien"):
+def make_prompt(allergies, servings, note, days=7, audience="sinh vien",
+                lang="vi"):
     aller = ", ".join(allergies) if allergies else "nothing in particular"
     aud = AUDIENCES.get(audience, AUDIENCES["sinh vien"])
+    if lang == "en":
+        return (
+            "You are SafePlate, a meal-planning assistant. "
+            "Write EVERYTHING in English. "
+            "The user is allergic to: " + aller + ". "
+            "RULE 1 (safety): NEVER suggest any dish containing those allergens. "
+            "RULE 2: dish names must be REAL Vietnamese home dishes "
+            "(examples: Thit Kho Tau, Canh Chua Ca Loc, Ga Rang Gung, "
+            "Dau Phu Sot Ca Chua, Trung Chien Thit Bam, Rau Muong Xao Toi). "
+            "Give ingredients and steps in English. "
+            "RULE 3: ingredients must be real foods from a market. "
+            "RULE 4: list each day number from 1 to %d exactly once, no repeats. "
+            "RULE 5: fill EVERY day with a real dish and real ingredients — "
+            "never output empty arrays. "
+            "Audience: %s (%s). Add one short 'nutrition' note per day. "
+            "Servings per meal: %s. Note: %s. "
+            "Reply with valid JSON ONLY "
+            "(no markdown, no extra text) like: "
+            '{"days": [{"day": 1, "dish": "...", "ingredients": ["..."], '
+            '"steps": ["..."], "nutrition": "..."}], "shopping_list": ["..."]}' % (
+                days, audience, aud, servings, note)
+        )
     return (
         "You are SafePlate, a Vietnamese meal-planning assistant. "
-        "Write EVERYTHING in Vietnamese. "
+        "Write EVERYTHING in proper Vietnamese WITH full diacritics "
+        "(dau day du: a, e, o co dau day du). "
         "The user is allergic to: " + aller + ". "
         "RULE 1 (safety): NEVER suggest any dish containing those allergens. "
         "RULE 2: dish names must be REAL Vietnamese home dishes "
@@ -93,13 +117,18 @@ SCHEMA = {
 
 VARIANTS = {
     "dau phong": ["dau phong", "dau phuong", "dau lac", "lac", "peanut"],
+    "peanuts": ["dau phong", "dau phuong", "dau lac", "lac", "peanut"],
+    "peanut": ["dau phong", "dau phuong", "dau lac", "lac", "peanut"],
     "tom": ["tom", "tep", "shrimp"],
-    "cua": ["cua", "crab"],
-    "ghe": ["ghe", "crab"],
-    "trung": ["trung", "egg"],
+    "shrimp": ["tom", "tep", "shrimp"],
+    "cua": ["cua", "crab"], "ghe": ["ghe", "crab"], "crab": ["cua", "ghe", "crab"],
+    "trung": ["trung", "egg"], "eggs": ["trung", "egg"], "egg": ["trung", "egg"],
     "sua": ["sua", "milk", "bo ", "butter", "cheese", "pho mai"],
+    "milk": ["sua", "milk", "butter", "cheese"],
     "dau nanh": ["dau nanh", "soy", "dau hu", "dau phu", "tofu"],
+    "soy": ["dau nanh", "soy", "tofu"],
     "bot mi": ["bot mi", "wheat", "gluten", "banh mi"],
+    "wheat": ["bot mi", "wheat", "gluten"], "gluten": ["bot mi", "wheat", "gluten"],
 }
 
 
@@ -141,9 +170,10 @@ def _post(plan, allergies, days):
     return plan
 
 
-def generate(allergies, servings, note, days=7, audience="sinh vien"):
+def generate(allergies, servings, note, days=7, audience="sinh vien",
+             lang="vi"):
     import urllib.request
-    prompt = make_prompt(allergies, servings, note, days, audience)
+    prompt = make_prompt(allergies, servings, note, days, audience, lang)
     last = ""
     for i in range(4):
         payload = {
@@ -206,7 +236,8 @@ class H(BaseHTTPRequestHandler):
             plan = generate(req.get("allergies", []),
                             req.get("servings", 2),
                             req.get("note", ""), int(req.get("days", 7)),
-                            req.get("audience", "sinh vien"))
+                            req.get("audience", "sinh vien"),
+                            req.get("lang", "vi"))
             self._send(200, json.dumps(plan, ensure_ascii=False))
         except Exception as ex:
             self._send(500, json.dumps({"error": str(ex)[:500]}))
