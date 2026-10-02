@@ -32,6 +32,7 @@ button:disabled{opacity:.5}pre{white-space:pre-wrap;background:#020617;padding:1
 <label class="chk"><input type="checkbox" class="al" value="sua"> <span data-vi="sữa" data-en="milk"></span></label>
 <label class="chk"><input type="checkbox" class="al" value="dau nanh"> <span data-vi="đậu nành" data-en="soy"></span></label>
 <label class="chk"><input type="checkbox" class="al" value="bot mi"> <span data-vi="bột mì / gluten" data-en="wheat / gluten"></span></label>
+<label><span data-vi="Dị ứng khác (tự ghi, cách nhau bằng dấu phẩy): " data-en="Other allergies (type your own, comma-separated): "></span><input id="custom" type="text" style="width:100%" data-vi-ph="vd: mè, đậu hà lan, mù tạt" data-en-ph="e.g. sesame, peas, mustard"></label>
 <h3 data-vi="2. Khẩu phần" data-en="2. Servings"></h3>
 <label><span data-vi="Số người ăn: " data-en="People: "></span><input id="serv" type="number" value="2" min="1" max="8"></label>
 <label><span data-vi="Đối tượng: " data-en="Eating as: "></span><select id="aud">
@@ -63,6 +64,9 @@ function applyLang(l) {
   document.querySelectorAll("[data-vi]").forEach(e => {
     e.textContent = (l === "vi") ? e.getAttribute("data-vi") : e.getAttribute("data-en");
   });
+  document.querySelectorAll("[data-vi-ph]").forEach(e => {
+    e.placeholder = (l === "vi") ? e.getAttribute("data-vi-ph") : e.getAttribute("data-en-ph");
+  });
   document.getElementById("bud").value = (l === "vi") ? "sinh viên, chợ đầu mối" : "student budget, wet market";
   document.getElementById("out").textContent = T[l].empty;
 }
@@ -71,6 +75,8 @@ document.getElementById("len").onclick = () => applyLang("en");
 document.getElementById("go").onclick = async () => {
   const t = T[LANG], btn = document.getElementById("go"), out = document.getElementById("out");
   const al = [...document.querySelectorAll(".al:checked")].map(e => e.value);
+  const extra = document.getElementById("custom").value.split(",").map(s => s.trim()).filter(Boolean);
+  for (const x of extra) if (!al.includes(x)) al.push(x);
   const serv = document.getElementById("serv").value, bud = document.getElementById("bud").value;
   const aud = document.getElementById("aud").value;
   btn.disabled = true; out.textContent = t.thinking;
