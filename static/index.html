@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SafePlate — offline meal planner</title>
+<style>
+body{font-family:system-ui,sans-serif;max-width:720px;margin:2rem auto;padding:0 1rem;background:#0f172a;color:#e2e8f0}
+h1{color:#4ade80}.card{background:#1e293b;border-radius:12px;padding:1rem;margin:1rem 0}
+label{display:block;margin:.4rem 0}.chk{display:inline-block;margin:.2rem .6rem .2rem 0}
+button{background:#4ade80;border:0;border-radius:8px;padding:.6rem 1.2rem;font-weight:700;cursor:pointer}
+button:disabled{opacity:.5}pre{white-space:pre-wrap;background:#020617;padding:1rem;border-radius:8px}
+.badge{font-size:.8rem;color:#94a3b8}
+</style>
+</head>
+<body>
+<h1>SafePlate</h1>
+<p class="badge">100% offline — Gemma runs on this laptop via llama.cpp. No data leaves your machine.</p>
+<div class="card">
+<h3>1. Di ung cua ban</h3>
+<label class="chk"><input type="checkbox" class="al" value="dau phong"> dau phong</label>
+<label class="chk"><input type="checkbox" class="al" value="tom"> tom</label>
+<label class="chk"><input type="checkbox" class="al" value="cua ghe"> cua / ghe</label>
+<label class="chk"><input type="checkbox" class="al" value="trung"> trung</label>
+<label class="chk"><input type="checkbox" class="al" value="sua"> sua</label>
+<label class="chk"><input type="checkbox" class="al" value="dau nanh"> dau nanh</label>
+<label class="chk"><input type="checkbox" class="al" value="bot mi"> bot mi / gluten</label>
+<h3>2. Khau phan</h3>
+<label>So nguoi an: <input id="serv" type="number" value="2" min="1" max="8"></label>
+<label>Ghi chu: <input id="bud" type="text" value="sinh vien, cho dau moi" style="width:100%"></label>
+<br><button id="go">Len thuc don 7 ngay</button>
+</div>
+<div class="card"><h3>Thuc don</h3><pre id="out">Chua co — bam nut tren.</pre></div>
+<script>
+const OLLAMA = "http://localhost:11434/api/generate";
+document.getElementById("go").onclick = async () => {
+  const btn = document.getElementById("go"), out = document.getElementById("out");
+  const al = [...document.querySelectorAll(".al:checked")].map(e => e.value);
+  const serv = document.getElementById("serv").value, bud = document.getElementById("bud").value;
+  btn.disabled = true; out.textContent = "Gemma dang nghi... (chay offline tren may nay)";
+  try {
+    const r = await fetch("/plan", {method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({allergies: al, servings: Number(serv),
+        note: bud, days: 7})});
+    const plan = await r.json();
+    if (plan.error) throw plan.error;
+    let html = "";
+    for (const d of plan.days) html += "Ngay " + d.day + ": " + d.dish
+      + "\n  NL: " + (d.ingredients||[]).join(", ")
+      + "\n  Lam: " + (d.steps||[]).join(" | ") + "\n\n";
+    html += "=== DI CHO ===\n" + (plan.shopping_list||[]).join(", ");
+    out.textContent = html;
+  } catch(e) { out.textContent = "Loi: " + e + "\n(python server.py co chay khong?)";
+  }
+  btn.disabled = false;
+};
+</script>
+</body>
+</html>
