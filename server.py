@@ -44,6 +44,8 @@ def make_prompt(allergies, servings, note, days=7, audience="sinh vien"):
         "RULE 3: ingredients must be real foods from a market "
         "(never generic words like chat beo, gia vi chung chung). "
         "RULE 4: list each day number from 1 to %d exactly once, no repeats. "
+        "RULE 5: fill EVERY day with a real dish and real ingredients — "
+        "never output empty arrays. " \
         "Audience: %s (%s). Add one short 'nutrition' note per day "
         "(e.g. protein source, balance). "
         "Servings per meal: %s. Note: %s. "
@@ -90,13 +92,13 @@ SCHEMA = {
 
 
 VARIANTS = {
-    "dau phong": ["dau phong", "dau lac", "lac", "peanut"],
-    "tom": ["tom", "shrimp", "tep"],
+    "dau phong": ["dau phong", "dau phuong", "dau lac", "lac", "peanut"],
+    "tom": ["tom", "tep", "shrimp"],
     "cua": ["cua", "crab"],
     "ghe": ["ghe", "crab"],
     "trung": ["trung", "egg"],
-    "sua": ["sua", "milk", "bo "],
-    "dau nanh": ["dau nanh", "soy", "dau hu", "dau phu"],
+    "sua": ["sua", "milk", "bo ", "butter", "cheese", "pho mai"],
+    "dau nanh": ["dau nanh", "soy", "dau hu", "dau phu", "tofu"],
     "bot mi": ["bot mi", "wheat", "gluten", "banh mi"],
 }
 
@@ -143,15 +145,17 @@ def generate(allergies, servings, note, days=7, audience="sinh vien"):
     import urllib.request
     prompt = make_prompt(allergies, servings, note, days, audience)
     last = ""
-    for _ in range(3):
-        body = json.dumps({
+    for i in range(4):
+        payload = {
             "prompt": prompt,
             "n_predict": 2048,
             "temperature": 0.7,
             "repeat_penalty": 1.15,
             "cache_prompt": True,
-            "json_schema": SCHEMA,
-        }).encode()
+        }
+        if i < 2:  # grammar-constrained first, free-form fallback
+            payload["json_schema"] = SCHEMA
+        body = json.dumps(payload).encode()
         req = urllib.request.Request(
             LLAMA_SERVER + "/completion", data=body,
             headers={"Content-Type": "application/json"})
@@ -164,7 +168,7 @@ def generate(allergies, servings, note, days=7, audience="sinh vien"):
                 return plan
         except Exception:
             continue
-    raise ValueError("model JSON failed after 3 tries: " + last[:200])
+    raise ValueError("model JSON failed after 4 tries: " + last[:200])
 
 
 class H(BaseHTTPRequestHandler):
@@ -189,7 +193,7 @@ class H(BaseHTTPRequestHandler):
             with open(os.path.join(HERE, "static", "index.html"), "rb") as f:
                 self._send(200, f.read(), "text/html; charset=utf-8")
         elif p == "/health":
-            self._send(200, json.dumps({"ok": True, "model": "gemma-3-1b-it-Q4_K_M"}))
+            self._send(200, json.dumps({"ok": True, "model": "gemma-3-4b-it-Q4_K_M"}))
         else:
             self._send(404, "not found", "text/plain")
 

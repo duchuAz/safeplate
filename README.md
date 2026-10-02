@@ -4,20 +4,22 @@ Built for the [DEV Hacktoberfest Weekend Challenge 2026: Build for a Friend](htt
 
 My roommate is allergic to peanuts and shrimp. Dorm wifi is flaky, and neither
 of us wants health data sitting on somebody else's server. So SafePlate runs
-**100% on the laptop**: [Gemma 3 1B](https://deepmind.google/technologies/gemma/)
+**100% on the laptop**: [Gemma 3 4B](https://deepmind.google/technologies/gemma/)
 (open weights, `ggml-org` Q4_K_M quant) executed locally by
-[gpt4all](https://github.com/nomic-ai/gpt4all) (bundled llama.cpp backend),
+[llama.cpp](https://github.com/ggml-org/llama.cpp) `llama-server`,
 a tiny web UI,
 zero accounts, zero tracking, zero cost.
 
 ## Run it (Windows / Mac / Linux)
 
-1. `pip install gpt4all`
-2. Download `gemma-3-1b-it-Q4_K_M.gguf` from
-   [ggml-org/gemma-3-1b-it-GGUF](https://huggingface.co/ggml-org/gemma-3-1b-it-GGUF)
-   into the `models/` path in `server.py` (`SAFEPLATE_MODEL` env overrides it)
-3. `python server.py` → open http://localhost:8765/
-4. CLI: `python safeplate.py peanuts,shrimp 2`
+1. Download + extract the `win-cpu` build of
+   [llama.cpp releases](https://github.com/ggml-org/llama.cpp/releases)
+2. Download `gemma-3-4b-it-Q4_K_M.gguf` from
+   [ggml-org/gemma-3-4b-it-GGUF](https://huggingface.co/ggml-org/gemma-3-4b-it-GGUF)
+3. `llama-server -m gemma-3-4b-it-Q4_K_M.gguf --port 8080`
+   (or any port — set `SAFEPLATE_LLAMA`)
+4. `python server.py` → open http://localhost:8765/
+5. CLI: `python safeplate.py peanuts,shrimp 2`
 
 ## How it works
 
